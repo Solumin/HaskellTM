@@ -20,4 +20,8 @@ In this emulator, Q is implicit in the δ function, Σ is fixed as above, and S 
 assumed to be "S". Additionally, δ is a function of the type "DeltaFunction"
 that takes a (State, Symbol) and returns (TapeAction, HeadAction, State).
 
-The current δ, written in main.hs, is a simple "shift left" function.
+The current δ functions:
+
+- shiftRight (input: (Zero|One)+)
+- shiftLeft (input: Blank\*(Zero|One)+)
+- binAdd (input: (Zero|One)+Blank(Zero|One)+)

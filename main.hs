@@ -119,7 +119,7 @@ shiftRight ("Q1", Blank) = (PrintOne, MoveLeft, "S")
 shiftLeft :: DeltaFunc
 shiftLeft ("S", Start) = (Keep, MoveRight, "S")
 shiftLeft ("S", Blank) = (Keep, MoveRight, "Q")
-shiftLeft ("S", _) = (Keep, Stay, halt)
+shiftLeft ("S", _) = (Keep, MoveLeft, halt)
 
 shiftLeft ("Q", Blank) = (Keep, MoveRight, "Q")
 shiftLeft ("Q", Zero) = (Erase, MoveLeft, "Q0")
