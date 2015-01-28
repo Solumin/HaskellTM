@@ -24,4 +24,4 @@ The current δ functions:
 
 - shiftRight (input: (Zero|One)+)
 - shiftLeft (input: Blank\*(Zero|One)+)
-- binAdd (input: (Zero|One)+Blank(Zero|One)+)
+- binAdd (input: (Zero|One){m}Blank(Zero|One){m}, m > 0)
