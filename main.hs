@@ -173,15 +173,12 @@ binAdd ("P1", _) = (Keep, MoveRight, "P1")
 binAdd ("PC", Blank) = (Keep, MoveRight, "WC")
 binAdd ("PC", _) = (Keep, MoveRight, "PC")
 
--- TODO: W0 and W1 should check for a carry bit
--- Move right 2
--- If 1: Erase, move left 2
---  W0: keep, stay, W1
---  W1: keep, stay, WC
-binAdd ("W0", Blank) = (PrintZero, MoveLeft, "B")
+-- binAdd ("W0", Blank) = (PrintZero, MoveLeft, "B")
+binAdd ("W0", Blank) = (Keep, MoveRight, "AC0")
 binAdd ("W0", _) = (Keep, MoveRight, "W0")
 
-binAdd ("W1", Blank) = (PrintOne, MoveLeft, "B")
+-- binAdd ("W1", Blank) = (PrintOne, MoveLeft, "B")
+binAdd ("W1", Blank) = (Keep, MoveRight, "AC1")
 binAdd ("W1", _) = (Keep, MoveRight, "W1")
 
 binAdd ("WC", Blank) = (PrintZero, MoveRight, "WCC")
@@ -192,6 +189,16 @@ binAdd ("WCC", Blank) = (Keep, MoveRight, "WCC'")
 binAdd ("WCC'", Blank) = (PrintOne, MoveLeft, "WCB")
 
 binAdd ("WCB", _) = (Keep, MoveLeft, "B")
+
+binAdd ("AC0", Blank) = (Keep, MoveLeft, "WR0")
+binAdd ("AC0", One) = (Erase, MoveLeft, "WR1")
+
+binAdd ("AC1", Blank) = (Keep, MoveLeft, "WR1")
+binAdd ("AC1", One) = (Erase, MoveLeft, "WC")
+
+binAdd ("WR0", Blank) = (PrintZero, MoveLeft, "B")
+
+binAdd ("WR1", Blank) = (PrintOne, MoveLeft, "B")
 
 -- "B" and "B1" return the head to the start of the tape.
 binAdd ("B", Blank) = (Keep, MoveLeft, "B1")
