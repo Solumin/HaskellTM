@@ -59,6 +59,7 @@ keep = id
 
 printTape :: Tape -> Symbol -> Tape
 printTape (Tape _ Start _) _ = error "You aren't allowed to touch the Start symbol"
+printTape t Start = error "You really shouldn't print a second Start symbol."
 printTape (Tape ls c rs) n = Tape ls n rs
 
 printZero :: Tape -> Tape
@@ -98,19 +99,94 @@ runDebug' :: DeltaFunc -> State -> Tape -> IO Tape
 runDebug' d state tape = do
     (tact, hact, newS) <- return (d (state, current tape))
     let newTape = updateTape tape tact hact
-    print newTape
+    putStrLn (show newTape ++ "  " ++ newS)
     if newS == halt then return newTape
         else runDebug' d newS newTape
 
-delta :: DeltaFunc
-delta ("S", Start) = (Keep, MoveRight, "S")
-delta ("S", Blank) = (Keep, MoveLeft, "Q")
-delta ("S", _) = (Keep, MoveRight, "S")
+shiftRight :: DeltaFunc
+shiftRight ("S", Start) = (Keep, MoveRight, "S")
+shiftRight ("S", Blank) = (Keep, MoveLeft, "Q")
+shiftRight ("S", _) = (Keep, MoveRight, "S")
 
-delta ("Q", Start) = (Keep, Stay, halt)
-delta ("Q", Zero) = (Erase, MoveRight, "Q0")
-delta ("Q", One) = (Erase, MoveRight, "Q1")
+shiftRight ("Q", Start) = (Keep, Stay, halt)
+shiftRight ("Q", Zero) = (Erase, MoveRight, "Q0")
+shiftRight ("Q", One) = (Erase, MoveRight, "Q1")
 
-delta ("Q0", Blank) = (PrintZero, MoveLeft, "S")
+shiftRight ("Q0", Blank) = (PrintZero, MoveLeft, "S")
 
-delta ("Q1", Blank) = (PrintOne, MoveLeft, "S")
+shiftRight ("Q1", Blank) = (PrintOne, MoveLeft, "S")
+
+shiftLeft :: DeltaFunc
+shiftLeft ("S", Start) = (Keep, MoveRight, "S")
+shiftLeft ("S", Blank) = (Keep, MoveRight, "Q")
+shiftLeft ("S", _) = (Keep, Stay, halt)
+
+shiftLeft ("Q", Blank) = (Keep, MoveRight, "Q")
+shiftLeft ("Q", Zero) = (Erase, MoveLeft, "Q0")
+shiftLeft ("Q", One) = (Erase, MoveLeft, "Q1")
+
+shiftLeft ("Q0", Blank) = (PrintZero, MoveRight, "C")
+
+shiftLeft ("Q1", Blank) = (PrintOne, MoveRight, "C")
+
+shiftLeft ("C", Blank) = (Keep, MoveRight, "C'")
+
+shiftLeft ("C'", Blank) = (Keep, MoveLeft, "D")
+shiftLeft ("C'", _) = (Keep, Stay, "Q")
+
+shiftLeft ("D", Start) = (Keep, MoveRight, "H")
+shiftLeft ("D", _) = (Keep, MoveLeft, "D")
+
+shiftLeft ("H", Blank) = (Keep, Stay, "Q")
+shiftLeft ("H", _) = (Keep, MoveLeft, halt)
+
+binAdd :: DeltaFunc
+-- "S" is the start state. It finds the first bit of the first argument and
+-- proceeds to the corresponding F state
+binAdd ("S", Zero) = (Erase, MoveRight, "F0")
+binAdd ("S", One) = (Erase, MoveRight, "F1")
+binAdd ("S", _) = (Keep, MoveRight, "S")
+
+-- "F0" indicates that we're adding a 0 to the second argument. It seeks to the
+-- end of the first arg.
+binAdd ("F0", Blank) = (Keep, MoveRight, "R0")
+binAdd ("F0", _) = (Keep, MoveRight, "F0")
+
+-- "F1" is the same as F0, except it indicates addition of 1, not 0.
+binAdd ("F1", Blank) = (Keep, MoveRight, "R1")
+binAdd ("F1", _) = (Keep, MoveRight, "F1")
+
+binAdd ("R0", Blank) = (Keep, MoveRight, "R0")
+binAdd ("R0", Zero) = (Erase, MoveRight, "P0")
+binAdd ("R0", One) = (Erase, MoveRight, "P1")
+
+binAdd ("R1", Blank) = (Keep, MoveRight, "R1")
+binAdd ("R1", Zero) = (Erase, MoveRight, "P1")
+-- binAdd ("R1", One) = (Erase, MoveRight, "PC")
+
+binAdd ("P0", Blank) = (Keep, MoveRight, "W0")
+binAdd ("P0", _) = (Keep, MoveRight, "P0")
+
+binAdd ("P1", Blank) = (Keep, MoveRight, "W1")
+binAdd ("P1", _) = (Keep, MoveRight, "P1")
+
+binAdd ("W0", Blank) = (PrintZero, MoveLeft, "B")
+binAdd ("W0", _) = (Keep, MoveRight, "W0")
+
+binAdd ("W1", Blank) = (PrintOne, MoveLeft, "B")
+binAdd ("W1", _) = (Keep, MoveRight, "W1")
+
+-- "B" and "B1" return the head to the start of the tape.
+binAdd ("B", Blank) = (Keep, MoveLeft, "B1")
+binAdd ("B", _) = (Keep, MoveLeft, "B")
+
+binAdd ("B1", Start) = (Keep, Stay, halt)
+binAdd ("B1", Blank) = (Keep, MoveLeft, "B1")
+binAdd ("B1", _) = (Keep, MoveLeft, "C")
+
+-- "C" is the "Continue" state. If we're in C when we find the Start symbol, we
+-- still have more bits to process
+binAdd ("C", Start) = (Keep, Stay, "S")
+binAdd ("C", _) = (Keep, MoveLeft, "C")
+
+binAdd m = error $ "Unknown m-config " ++ show m
