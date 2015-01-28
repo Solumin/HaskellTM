@@ -1,0 +1,2 @@
+# Don't need to see Vim temp files!
+*.sw[a-z]
